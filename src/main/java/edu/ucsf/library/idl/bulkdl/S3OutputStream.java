@@ -5,18 +5,18 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
-import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 
@@ -28,6 +28,8 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
  */
 
 public class S3OutputStream extends OutputStream {
+    private static final Logger log = LoggerFactory.getLogger(S3OutputStream.class);
+
     private final S3Client s3_client;
     private final String bucket;
     private final String key;
@@ -37,7 +39,6 @@ public class S3OutputStream extends OutputStream {
     private int buf_index;
     private boolean is_open;
     private String upload_id;
-    private String abort_id;
     private List<CompletedPart> parts;
 
     public S3OutputStream(S3Client s3_client, String bucket, String key, int buffer_size) {
@@ -58,7 +59,7 @@ public class S3OutputStream extends OutputStream {
 
     @Override
     public void write(byte[] byteArray, int offset, int length) {
-        assertOpen();
+        assert_open();
 
         int size;
 
@@ -78,7 +79,7 @@ public class S3OutputStream extends OutputStream {
 
     @Override
     public synchronized void flush() {
-        assertOpen();
+        assert_open();
     }
 
     private void flush_buffer() {
@@ -87,7 +88,9 @@ public class S3OutputStream extends OutputStream {
             CreateMultipartUploadResponse resp = s3_client.createMultipartUpload(req);
 
             upload_id = resp.uploadId();
-            abort_id = resp.abortRuleId();
+
+            // The abort rule id never appears to be used.
+            // resp.abortRuleId();
         }
 
         upload_part();
@@ -95,7 +98,7 @@ public class S3OutputStream extends OutputStream {
     }
 
     private void upload_part() {
-        int part = parts.size();
+        int part = parts.size() + 1;
         UploadPartRequest req = UploadPartRequest.builder().bucket(bucket).key(key).partNumber(part).uploadId(upload_id)
                 .build();
 
@@ -107,6 +110,8 @@ public class S3OutputStream extends OutputStream {
 
     @Override
     public void close() {
+        log.info("close");
+
         if (this.is_open) {
             this.is_open = false;
 
@@ -115,15 +120,17 @@ public class S3OutputStream extends OutputStream {
                     upload_part();
                 }
 
+                log.info("close");
+
                 CompleteMultipartUploadRequest req = CompleteMultipartUploadRequest.builder().bucket(bucket).key(key)
                         .uploadId(upload_id).multipartUpload(CompletedMultipartUpload.builder().parts(parts).build())
 
                         .build();
-                CompleteMultipartUploadResponse resp = s3_client.completeMultipartUpload(req);
+                s3_client.completeMultipartUpload(req);
             } else {
                 PutObjectRequest req = PutObjectRequest.builder().bucket(bucket).key(key).build();
                 ByteArrayInputStream is = new ByteArrayInputStream(buf, 0, buf_index);
-                PutObjectResponse resp = s3_client.putObject(req, RequestBody.fromInputStream(is, buf_index));
+                s3_client.putObject(req, RequestBody.fromInputStream(is, buf_index));
             }
         }
     }
@@ -132,14 +139,15 @@ public class S3OutputStream extends OutputStream {
         is_open = false;
 
         if (upload_id != null) {
-            AbortMultipartUploadRequest req = AbortMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(upload_id).build();
-            AbortMultipartUploadResponse resp = s3_client.abortMultipartUpload(req);
+            AbortMultipartUploadRequest req = AbortMultipartUploadRequest.builder().bucket(bucket).key(key)
+                    .uploadId(upload_id).build();
+            s3_client.abortMultipartUpload(req);
         }
     }
 
     @Override
     public void write(int b) {
-        assertOpen();
+        assert_open();
 
         if (buf_index >= this.buf.length) {
             flush_buffer();
@@ -147,7 +155,7 @@ public class S3OutputStream extends OutputStream {
         this.buf[buf_index++] = (byte) b;
     }
 
-    private void assertOpen() {
+    private void assert_open() {
         if (!is_open) {
             throw new IllegalStateException("Closed");
         }
