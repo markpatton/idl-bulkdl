@@ -6,9 +6,17 @@ Resources:
     Properties:
       Runtime: java11
       Handler: edu.ucsf.library.idl.bulkdl.ZipUploadRequestHandler::handleRequest
+      FunctionName: bulkdl
       Timeout: 60
       MemorySize: 512
       CodeUri: ./target/idl-bulkdl.jar
+      Environment:
+        Variables:
+          AWS_ACCESS_KEY_ID:
+          AWS_SECRET_ACCESS_KEY:
+          AWS_REGION:
+          IDL_BULKDL_BUCKET_SOURCE:
+          IDL_BULKDL_BUCKET_TARGET:
       Policies:
         - S3ReadPolicy:
             BucketName: oida-test-data

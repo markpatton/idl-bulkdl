@@ -130,7 +130,7 @@ public class ZipUploadRequestHandlerTest {
 
     @Test
     public void testHandlRequestMultipartUpload() throws IOException {
-        // The buffer size will be set to the 5 MB mimimum which will force a multipart upload
+        // The buffer size will be set to the 5 MB minimum which will force a multipart upload
         ZipUploadRequestHandler handler = new ZipUploadRequestHandler(100 * 1024);
 
         List<String> keys = test_files.stream().map(f -> f.name).collect(Collectors.toList());

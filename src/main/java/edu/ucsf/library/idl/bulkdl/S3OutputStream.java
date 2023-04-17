@@ -5,9 +5,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
@@ -23,12 +20,11 @@ import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 /**
  * Adapted from
  * https://gist.github.com/blagerweij/ad1dbb7ee2fff8bcffd372815ad310eb.
- *
- *
  */
 
 public class S3OutputStream extends OutputStream {
-    private static final Logger log = LoggerFactory.getLogger(S3OutputStream.class);
+    // S3 has a minimum required part size of 5 MB.
+    private static final int MIN_BUFFER_SIZE = 5 * 1024 * 1024;
 
     private final S3Client s3_client;
     private final String bucket;
@@ -45,7 +41,7 @@ public class S3OutputStream extends OutputStream {
         this.s3_client = s3_client;
         this.bucket = bucket;
         this.key = key;
-        this.buf = new byte[buffer_size];
+        this.buf = new byte[buffer_size < MIN_BUFFER_SIZE ? MIN_BUFFER_SIZE : buffer_size];
         this.buf_index = 0;
         this.is_open = true;
         this.upload_id = null;
@@ -110,8 +106,6 @@ public class S3OutputStream extends OutputStream {
 
     @Override
     public void close() {
-        log.info("close");
-
         if (this.is_open) {
             this.is_open = false;
 
@@ -119,8 +113,6 @@ public class S3OutputStream extends OutputStream {
                 if (this.buf_index > 0) {
                     upload_part();
                 }
-
-                log.info("close");
 
                 CompleteMultipartUploadRequest req = CompleteMultipartUploadRequest.builder().bucket(bucket).key(key)
                         .uploadId(upload_id).multipartUpload(CompletedMultipartUpload.builder().parts(parts).build())

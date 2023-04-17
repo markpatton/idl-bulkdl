@@ -23,8 +23,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
  * key of the zip in the target bucket.
  */
 public class ZipUploadRequestHandler implements RequestHandler<List<String>, String> {
-    private final static DateTimeFormatter dt_formatter = DateTimeFormatter.ofPattern("yyyy-MM");
-
     private final S3Client s3_client;
     private final String source_bucket;
     private final String target_bucket;
@@ -38,9 +36,7 @@ public class ZipUploadRequestHandler implements RequestHandler<List<String>, Str
         this.s3_client = Config.s3Client();
         this.source_bucket = Config.sourceBucket();
         this.target_bucket = Config.targetBucket();
-
-        // Minimum size of a part if 5MB
-        this.buffer_size = Math.max(buffer_size, 5 * 1024 * 1024);
+        this.buffer_size = buffer_size;
     }
 
     void zip(String bucket, List<String> keys, OutputStream os) throws IOException {
@@ -59,7 +55,7 @@ public class ZipUploadRequestHandler implements RequestHandler<List<String>, Str
 
     @Override
     public String handleRequest(List<String> keys, Context context) {
-        String target_key = dt_formatter.format(LocalDateTime.now()) + "/" + UUID.randomUUID() + ".zip";
+        String target_key = UUID.randomUUID() + ".zip";
 
         // Be careful to cancel the upload in case of an exception
         S3OutputStream os = null;
