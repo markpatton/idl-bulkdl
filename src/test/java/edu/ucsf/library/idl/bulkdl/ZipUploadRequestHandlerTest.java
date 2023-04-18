@@ -27,6 +27,11 @@ import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+/**
+ * Test the lambda function against s3 buckets.
+ * Date is uploaded to the source bucket and written to the target buckets.
+ * The test code tries to delete the added objects.
+ */
 public class ZipUploadRequestHandlerTest {
     private final static S3Client s3_client = Config.s3Client();
     private final static String source_bucket = Config.sourceBucket();
@@ -143,6 +148,9 @@ public class ZipUploadRequestHandlerTest {
 
             assertEquals(test_files.size(), zipped_files.size());
             assertEquals(test_files, zipped_files);
+        } finally  {
+            DeleteObjectRequest delreq = DeleteObjectRequest.builder().bucket(target_bucket).key(zip_key).build();
+            s3_client.deleteObject(delreq);
         }
     }
 
@@ -161,6 +169,9 @@ public class ZipUploadRequestHandlerTest {
 
             assertEquals(test_files.size(), zipped_files.size());
             assertEquals(test_files, zipped_files);
+        } finally {
+            DeleteObjectRequest delreq = DeleteObjectRequest.builder().bucket(target_bucket).key(zip_key).build();
+            s3_client.deleteObject(delreq);
         }
     }
 }
