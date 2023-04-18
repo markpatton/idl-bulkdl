@@ -12,11 +12,9 @@ Resources:
       CodeUri: ./target/idl-bulkdl.jar
       Environment:
         Variables:
-          AWS_ACCESS_KEY_ID:
-          AWS_SECRET_ACCESS_KEY:
-          AWS_REGION:
-          IDL_BULKDL_BUCKET_SOURCE:
-          IDL_BULKDL_BUCKET_TARGET:
+          IDL_BULKDL_BUCKET_SOURCE: oida-test-data
+          IDL_BULKDL_BUCKET_TARGET: oida-test-bulkdl
+          IDL_BULKDL_BUFFER_SIZE: 10485760
       Policies:
         - S3ReadPolicy:
             BucketName: oida-test-data
