@@ -40,6 +40,7 @@ Environment variables
 * AWS_REGION
 * IDL_BULKDL_BUCKET_SOURCE
 * IDL_BULKDL_BUCKET_TARGET
+* IDL_BULKDL_BUFFER_SIZE
 
 The keys given as an argument to the function refer to objects in the source bucket. The zip file is written to the target bucket.
 
