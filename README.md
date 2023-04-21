@@ -2,6 +2,8 @@
 
 This is a lambda function that takes an array of keys as an argument, zips them together as a single file into another bucket, and returns the randomly generated name of the new file.
 
+The array argument is passed as the body of an Amazon API gateway payload version 2.0.
+
 # Building
 
 Requirements:
@@ -13,7 +15,7 @@ Requirements:
 
 Build with maven:
 ```
-mvn clean install -Dtest.skip
+mvn clean install -Dmaven.test.skip
 ```
 The tests need access to s3 buckets. In order to run them you have to do some setup first.
 
@@ -35,9 +37,6 @@ mvn clean install
 # Configuration
 
 Environment variables
-* AWS_ACCESS_KEY_ID
-* AWS_SECRET_ACCESS_KEY
-* AWS_REGION
 * IDL_BULKDL_BUCKET_SOURCE
 * IDL_BULKDL_BUCKET_TARGET
 * IDL_BULKDL_BUFFER_SIZE
@@ -58,9 +57,9 @@ Start the lambda:
 sam local start-lambda
 ```
 
-Try to zip up some of the files in the source bucket.
+Try to zip up some of the files in the source bucket. Note that the input is an event, but the lambda only uses the body.
 ```
-curl -XPOST "http://localhost:3001/2015-03-31/functions/bulkdl/invocations" -d '["snhk0078.pdf"]'
+curl -XPOST "http://localhost:3001/2015-03-31/functions/bulkdl/invocations" -d '{"body": "[\"snhk0078.pdf\"]"}'
 ```
 
 The name of the zip will be returned.
@@ -80,3 +79,26 @@ sam deploy --guided
 
 See [Deploying Serverless Applications](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-deploying.html) for more info.
 
+
+Create a function url:
+```
+ aws lambda create-function-url-config --function-name bulkdl  --auth-type AWS_IAM
+```
+
+Find the function url.
+```
+aws lambda get-function-url-config --function-name bulkdl
+```
+
+Invoke the function url:
+```
+curl -v -XPOST FUNCTION_URL  --header 'Content-Type: application/json' --user $AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY --aws-sigv4 "aws:amz:us-east-1:lambda" -d '["pgmj0191.pdf"]'
+```
+
+Check the created zip as above.
+
+See logs.
+```
+ aws logs describe-log-streams --log-group-name /aws/lambda/bulkdl
+ aws logs get-log-events --log-group-name /aws/lambda/bulkdl --log-stream-name 'NAME'
+ ```
