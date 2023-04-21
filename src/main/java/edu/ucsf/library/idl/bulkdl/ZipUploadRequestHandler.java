@@ -60,12 +60,7 @@ public class ZipUploadRequestHandler implements RequestHandler<APIGatewayV2HTTPE
 
     @Override
     public String handleRequest(APIGatewayV2HTTPEvent event, Context context) {
-        context.getLogger().log("***\n" + event.getBody() + "\n***");
-
         JsonNode node = JsonNodeParser.create().parse(event.getBody());
-
-
-
         List<String> keys = node.asArray().stream().map(JsonNode::asString).collect(Collectors.toList());
 
         String target_key = UUID.randomUUID() + ".zip";
