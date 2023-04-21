@@ -7,7 +7,7 @@ Resources:
       Runtime: java11
       Handler: edu.ucsf.library.idl.bulkdl.ZipUploadRequestHandler::handleRequest
       FunctionName: bulkdl
-      Timeout: 60
+      Timeout: 900
       MemorySize: 512
       CodeUri: ./target/idl-bulkdl.jar
       Environment:
