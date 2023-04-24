@@ -90,7 +90,7 @@ Find the function url.
 aws lambda get-function-url-config --function-name bulkdl
 ```
 
-Invoke the function url:
+Invoke the function url. The body of the request is the array of keys.
 ```
 curl -v -XPOST FUNCTION_URL  --header 'Content-Type: application/json' --user $AWS_ACCESS_KEY_ID:$AWS_SECRET_ACCESS_KEY --aws-sigv4 "aws:amz:us-east-1:lambda" -d '["pgmj0191.pdf"]'
 ```
